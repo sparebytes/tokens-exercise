@@ -1,0 +1,21 @@
+printWidth: 100
+useTabs: false
+tabWidth: 2
+semi: true
+trailingComma: all
+arrowParens: always
+bracketSameLine: false
+htmlWhitespaceSensitivity: strict
+overrides:
+  - files: "**/*.md"
+    options:
+      printWidth: 80
+      proseWrap: always
+
+  - files:
+      - "*rc.js"
+      - "*rc.*.js"
+      - "*.config.js"
+    options:
+      printWidth: 80
+      quoteProps: consistent

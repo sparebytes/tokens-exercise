@@ -1,0 +1,14 @@
+{
+  "presets": [
+    ["@babel/env", { "targets": { "node": "16.14.0" } }],
+    [
+      "@babel/preset-typescript",
+      {
+        "onlyRemoveTypeImports": true,
+        "allowNamespaces": false,
+        "allowDeclareFields": true
+      }
+    ]
+  ],
+  "plugins": [["@babel/plugin-transform-runtime", { "regenerator": true }]]
+}
