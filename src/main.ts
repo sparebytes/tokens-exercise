@@ -6,7 +6,9 @@ async function start() {
     throw new Error("PORT must be provided");
   }
 
-  const server = buildServer();
+  const keys = new Set(process.env.API_AUTHENTICATION_SUPER_KEYS?.split(","));
+
+  const server = buildServer({ keys });
 
   try {
     await server.listen(PORT);

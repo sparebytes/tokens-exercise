@@ -1,12 +1,28 @@
 import Fastify from "fastify";
+import bearerAuthPlugin from "fastify-bearer-auth";
+import helmet from "fastify-helmet";
 import { insertSecret, loadSecrets, updateSecret } from "./persist";
 import { generateToken, isValidToken } from "./utils";
 
-export function buildServer() {
+export function buildServer(options: { keys: Set<string> }) {
+  if (options.keys.size < 1) {
+    throw new Error("At least one key must be provided.");
+  }
+  for (const key of options.keys) {
+    if (key.length !== 64) {
+      throw new Error("One of the API_AUTHENTICATION_SUPER_KEYS values is invalid");
+    }
+  }
+
   const server = Fastify();
-  server.get("/health", async (request, reply) => {
-    return { healthy: true };
-  });
+
+  server.register(
+    helmet,
+    // Example disables the `contentSecurityPolicy` middleware but keeps the rest.
+    { contentSecurityPolicy: false },
+  );
+
+  server.register(bearerAuthPlugin, { keys: options.keys });
 
   server.get("/tokens", async (request, reply) => {
     const tokensStr: string = request.query.t;
@@ -20,6 +36,12 @@ export function buildServer() {
     }
 
     const tokens = tokensStr.split(",");
+    // discuss: allow 100 tokens at once?
+    if (tokens.length > 100) {
+      reply.code(414);
+      return { error: `At most 100 tokens may be given at once.` };
+    }
+
     for (const token of tokens) {
       if (!isValidToken(token)) {
         reply.code(400);
@@ -32,12 +54,12 @@ export function buildServer() {
   });
 
   server.post("/tokens", async (request, reply) => {
-    const secret: string = request.body.secret;
+    const secret: string = request.body?.secret;
     if (secret === undefined) {
       reply.code(400);
       return { error: `Body property "secret" must be provided.` };
     }
-    if (typeof secret === "string") {
+    if (typeof secret !== "string") {
       reply.code(400);
       return { error: `Body property "secret" must be a string.` };
     }
@@ -62,12 +84,12 @@ export function buildServer() {
       return { error: `Token parameter is improperly formatted.`, token };
     }
 
-    const secret: string = request.body.secret;
+    const secret: string = request.body?.secret;
     if (secret === undefined) {
       reply.code(400);
       return { error: `Body property "secret" must be provided.` };
     }
-    if (typeof secret === "string") {
+    if (typeof secret !== "string") {
       reply.code(400);
       return { error: `Body property "secret" must be a string.` };
     }

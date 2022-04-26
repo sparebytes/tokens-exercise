@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    // Emit
+    "target": "ES2021",
+    "module": "CommonJS",
+    "experimentalDecorators": false,
+    "emitDecoratorMetadata": false,
+    "useDefineForClassFields": true,
+    "sourceMap": true,
+    "declaration": false,
+    "jsx": "react",
+    "esModuleInterop": true,
+
+    // Resolution
+    "lib": ["esnext"],
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+
+    // Build
+    "composite": false,
+
+    // Checks
+    "skipLibCheck": false,
+    "strict": true,
+    "noUnusedLocals": true,
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "useUnknownInCatchVariables": false
+  },
+  "include": ["src"],
+  "exclude": ["**/*.test.*"]
+}
