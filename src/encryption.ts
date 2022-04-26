@@ -22,9 +22,3 @@ export function decrypt(ciphertext: string, key: string) {
 
   return decipher.update(text, "binary", "utf8") + decipher.final("utf8");
 }
-
-// Example usage
-// generate 256-bit symmetric key
-const key = crypto.randomBytes(32).toString("hex");
-const plaintext = "encrypt me!";
-const ciphertext = encrypt(plaintext, key);

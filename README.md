@@ -16,9 +16,16 @@
       response
 
 - A Bearer token is required to restrict which services have access.
+
   - Provides protection if services which do not need access to this api are
     compromised.
   - Provides protection if the database is compromised
   - Each service which requires access should use a unique bearer token to for
     rate tracking and to allow the services to be quickly removed from the
     allow-list in the case it is compromised
+
+- We must be very careful about any that is logged and how errors are reported
+
+- We must be very careful about any misconfigurations
+
+- Encryption keys should be rotated regularly to prevent key exhuastion

@@ -8,7 +8,7 @@ export function isValidToken(token: string) {
 }
 
 export function parseTokenUuid(token: string) {
-  const uuid = tokenFormatRegex.exec(token)?.[1];
+  const uuid = tokenFormatRegex.exec(token)?.[1]?.toLowerCase();
   if (uuid === undefined) {
     throw new Error("Invalid token format.");
   }
@@ -16,6 +16,6 @@ export function parseTokenUuid(token: string) {
 }
 
 export function generateToken() {
-  // Note: Went with a uuid for uniqueness and performant storability
+  // [ ] discuss: Went with a uuid for uniqueness and performant storability
   return `dp.token.${v4()}`;
 }

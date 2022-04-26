@@ -1,34 +1,29 @@
 import Fastify from "fastify";
 import bearerAuthPlugin from "fastify-bearer-auth";
-import helmet from "fastify-helmet";
+import { authorizationTokens } from "./authorizationTokens";
 import { insertSecret, loadSecrets, updateSecret } from "./persist";
 import { generateToken, isValidToken } from "./utils";
 
-// discuss:
+// [ ] discuss:
 const MAX_SECRET_LENGTH = 500000;
 
-// discuss:
+// [ ] discuss:
 const MAX_TOKENS_AT_ONCE = 100;
 
-export function buildServer(options: { keys: Set<string> }) {
-  if (options.keys.size < 1) {
-    throw new Error("At least one key must be provided.");
-  }
-  for (const key of options.keys) {
-    if (key.length !== 64) {
-      throw new Error("One of the API_AUTHENTICATION_SUPER_KEYS values is invalid");
-    }
-  }
+export function buildServer() {
+  const server = Fastify({
+    // [ ] discuss: where are logs piped?
+    logger: { level: "error" },
+  });
 
-  const server = Fastify();
+  // [ ] discuss: anything that results in an Internal Server Error should be looked at immediately
+  server.setErrorHandler((error, request, reply) => {
+    reply.send({ error: "Internal Server Error" });
+    server.log.error(error);
+  });
 
-  server.register(
-    helmet,
-    // Example disables the `contentSecurityPolicy` middleware but keeps the rest.
-    { contentSecurityPolicy: false },
-  );
-
-  server.register(bearerAuthPlugin, { keys: options.keys });
+  // [ ] discuss: this middleware will cause print an error to the console
+  server.register(bearerAuthPlugin, { keys: authorizationTokens });
 
   server.get("/tokens", async (request, reply) => {
     const tokensStr: string = request.query.t;
@@ -107,6 +102,9 @@ export function buildServer(options: { keys: Set<string> }) {
       return { error: `Secret length must be less than ${MAX_SECRET_LENGTH} .` };
     }
 
+    // [ ] discuss: Should be token be replaced on update?
+    // what happens if a secret is updated while reads are occuring?
+    // if a token is replaced then the old value should be given a time to live before it is deleted
     await updateSecret(token, secret);
 
     return { token };

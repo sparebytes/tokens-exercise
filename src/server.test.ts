@@ -1,11 +1,11 @@
 var z: string = "";
 
 import { withServer } from "../test/helper";
+import { authorizationTokens } from "./authorizationTokens";
 import { isValidToken } from "./utils";
 
-const authKey = process.env.API_AUTHENTICATION_SUPER_KEYS?.split(",")[0];
 const headers = {
-  Authorization: `Bearer ${authKey}`,
+  Authorization: `Bearer ${Array.from(authorizationTokens)[0]}`,
 };
 const veryLongSecret = "a".repeat(600000);
 
