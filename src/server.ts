@@ -4,6 +4,12 @@ import helmet from "fastify-helmet";
 import { insertSecret, loadSecrets, updateSecret } from "./persist";
 import { generateToken, isValidToken } from "./utils";
 
+// discuss:
+const MAX_SECRET_LENGTH = 500000;
+
+// discuss:
+const MAX_TOKENS_AT_ONCE = 100;
+
 export function buildServer(options: { keys: Set<string> }) {
   if (options.keys.size < 1) {
     throw new Error("At least one key must be provided.");
@@ -36,10 +42,9 @@ export function buildServer(options: { keys: Set<string> }) {
     }
 
     const tokens = tokensStr.split(",");
-    // discuss: allow 100 tokens at once?
-    if (tokens.length > 100) {
+    if (tokens.length > MAX_TOKENS_AT_ONCE) {
       reply.code(414);
-      return { error: `At most 100 tokens may be given at once.` };
+      return { error: `At most ${MAX_TOKENS_AT_ONCE} tokens may be given at once.` };
     }
 
     for (const token of tokens) {
@@ -62,6 +67,10 @@ export function buildServer(options: { keys: Set<string> }) {
     if (typeof secret !== "string") {
       reply.code(400);
       return { error: `Body property "secret" must be a string.` };
+    }
+    if (secret.length > MAX_SECRET_LENGTH) {
+      reply.code(413);
+      return { error: `Secret length must be less than ${MAX_SECRET_LENGTH} .` };
     }
 
     const token = generateToken();
@@ -92,6 +101,10 @@ export function buildServer(options: { keys: Set<string> }) {
     if (typeof secret !== "string") {
       reply.code(400);
       return { error: `Body property "secret" must be a string.` };
+    }
+    if (secret.length > MAX_SECRET_LENGTH) {
+      reply.code(413);
+      return { error: `Secret length must be less than ${MAX_SECRET_LENGTH} .` };
     }
 
     await updateSecret(token, secret);

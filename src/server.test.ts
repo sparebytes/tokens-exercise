@@ -7,6 +7,7 @@ const authKey = process.env.API_AUTHENTICATION_SUPER_KEYS?.split(",")[0];
 const headers = {
   Authorization: `Bearer ${authKey}`,
 };
+const veryLongSecret = "a".repeat(600000);
 
 describe("/tokens", () => {
   test("Invalid URL", () =>
@@ -40,6 +41,18 @@ describe("/tokens", () => {
         expect(res.statusCode).toBe(400);
         expect(res.payload).toBe('{"error":"Query string \\"t\\" must not be empty."}');
       }));
+
+    test("414 if too many tokens", () =>
+      withServer(async (server) => {
+        const res = await server.inject({
+          headers,
+          method: "GET",
+          url: "/tokens",
+          query: { t: "a,".repeat(100) + "a" },
+        });
+        expect(res.statusCode).toBe(414);
+        expect(res.payload).toBe('{"error":"At most 100 tokens may be given at once."}');
+      }));
   });
 
   describe("POST /tokens", () => {
@@ -62,6 +75,20 @@ describe("/tokens", () => {
         });
         expect(res.statusCode).toBe(400);
         expect(res.payload).toBe('{"error":"Body property \\"secret\\" must be a string."}');
+      }));
+
+    test("413 if secret is too long", () =>
+      withServer(async (server) => {
+        const res = await server.inject({
+          headers,
+          method: "POST",
+          url: "/tokens",
+          payload: {
+            secret: veryLongSecret,
+          },
+        });
+        expect(res.statusCode).toBe(413);
+        expect(res.payload).toBe('{"error":"Secret length must be less than 500000 ."}');
       }));
 
     test("Empty Secret", () =>
@@ -149,6 +176,35 @@ describe("/tokens", () => {
       });
       expect(res30.statusCode).toBe(200);
       expect(JSON.parse(res30.payload)).toMatchObject({ token: t1 });
+
+      // update error - missing secret
+      const res31 = await server.inject({
+        headers,
+        method: "PUT",
+        url: `/tokens/${t1}`,
+      });
+      expect(res31.statusCode).toBe(400);
+      expect(res31.payload).toBe('{"error":"Body property \\"secret\\" must be provided."}');
+
+      // update error - secret isn't string
+      const res32 = await server.inject({
+        headers,
+        method: "PUT",
+        url: `/tokens/${t1}`,
+        payload: { secret: 123 },
+      });
+      expect(res32.statusCode).toBe(400);
+      expect(res32.payload).toBe('{"error":"Body property \\"secret\\" must be a string."}');
+
+      // update error - sercret is too long
+      const res33 = await server.inject({
+        headers,
+        method: "PUT",
+        url: `/tokens/${t1}`,
+        payload: { secret: veryLongSecret },
+      });
+      expect(res33.statusCode).toBe(413);
+      expect(res33.payload).toBe('{"error":"Secret length must be less than 500000 ."}');
 
       // get
       const res40 = await server.inject({
