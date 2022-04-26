@@ -16,6 +16,7 @@ export function parseTokenUuid(token: string) {
 }
 
 export function generateToken() {
-  // [ ] discuss: Went with a uuid for uniqueness and performant storability
+  // [ ] discuss: Went with a UUID for uniqueness and performant storability
+  //              UUIDs not contain characters which must be escaped in URLs
   return `dp.token.${v4()}`;
 }

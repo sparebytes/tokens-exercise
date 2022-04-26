@@ -1,22 +1,38 @@
-## Notes
+# Tokens Service Exercise
 
-- Assumptions: running on internal network. No public access by browsers so
-  typical CORS and other protections are not required
+## Configuration
 
-- How many tokens should we allow to be queried at once?
+- We must be very careful about any misconfigurations to prevent downtime and
+  insecure settings
 
-  - 100 seems like a decent number to allow most reasonable requests to succeed
-    while mitigating DOS
+## Encryption at rest
 
-- What's the largest sized secret we should allow?
+- [AES 256 GCM](src/encryption.ts#L4)
+- [Changing primary encryption key mid-process](src/encryptionKeys.ts#L23)
+- [Encryption Key Rotation](.env.development)
 
-  - [Fastify](https://www.fastify.io/docs/latest/Reference/Server/#bodylimit)
-    defaults to a 1mb body limit.
-    - If we allow 100 tokens to be queried at once, leads to a max 100mb
-      response
+## Encryption in Transit
 
-- A Bearer token is required to restrict which services have access.
+- Ensure the internal network communication is encrypted
 
+## Tokens
+
+- [UUIDs for Tokens](src/utils.ts#L19)
+
+## Persistence
+
+- [DB Transaction for Update](src/persist.ts#L65)
+- [Expiring Updated Tokens](src/persist.ts#L70)
+
+## Logging
+
+- [Logging](src/server.ts#L16)
+- [Internal Server Errors](src/server.ts#L21)
+- [Errors](src/persist.ts#L27)
+
+## Auth
+
+- [Bearer Tokens](src/server.ts#L27)
   - Provides protection if services which do not need access to this api are
     compromised.
   - Provides protection if the database is compromised
@@ -24,8 +40,17 @@
     rate tracking and to allow the services to be quickly removed from the
     allow-list in the case it is compromised
 
-- We must be very careful about any that is logged and how errors are reported
+## Api Limits
 
-- We must be very careful about any misconfigurations
+- [Max Secret Size](src/server.ts#L8)
+- [Max Tokens at Once](src/server.ts#L11)
+- Rate Limiting
 
-- Encryption keys should be rotated regularly to prevent key exhuastion
+## Api
+
+- [Updating Secrets](src/server.ts#L109)
+
+## Other Notes
+
+- No public access so typical CORS and other brother precautions protections are
+  not required

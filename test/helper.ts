@@ -5,7 +5,7 @@ import { buildServer } from "../src/server";
 export async function withServer(
   callback: (server: ReturnType<typeof buildServer>) => Promise<unknown>,
 ) {
-  const server = buildServer();
+  const server = buildServer({ logger: false });
   await server.ready();
   try {
     await callback(server);

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 
 // AES-256-GCM encryption using a pre-computed key and random IV
+// [ ] discuss: integrity and confidentiality
 export function encrypt(plaintext: string, key: string) {
   const iv = crypto.randomBytes(16);
 

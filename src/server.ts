@@ -11,13 +11,15 @@ const MAX_SECRET_LENGTH = 500000;
 // [ ] discuss:
 const MAX_TOKENS_AT_ONCE = 100;
 
-export function buildServer() {
+export function buildServer(opts?: any) {
   const server = Fastify({
     // [ ] discuss: where are logs piped?
+    // - HTTP, Error, and other logs cannot contain secret information
     logger: { level: "error" },
+    ...opts,
   });
 
-  // [ ] discuss: anything that results in an Internal Server Error should be looked at immediately
+  // [ ] discuss: Anything that results in an Internal Server Error should be looked at immediately
   server.setErrorHandler((error, request, reply) => {
     reply.send({ error: "Internal Server Error" });
     server.log.error(error);
@@ -64,7 +66,7 @@ export function buildServer() {
       reply.code(400);
       return { error: `Body property "secret" must be a string.` };
     }
-    if (secret.length > MAX_SECRET_LENGTH) {
+    if (Buffer.from(secret, "utf-8").length > MAX_SECRET_LENGTH) {
       reply.code(413);
       return { error: `Secret length must be less than ${MAX_SECRET_LENGTH} .` };
     }
