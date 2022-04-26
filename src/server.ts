@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import bearerAuthPlugin from "fastify-bearer-auth";
 import { authorizationTokens } from "./authorizationTokens";
+import { ReplacedSecretError } from "./errors";
 import { insertSecret, loadSecrets, updateSecret } from "./persist";
 import { generateToken, isValidToken } from "./utils";
 
@@ -74,18 +75,18 @@ export function buildServer() {
   });
 
   server.put("/tokens/:t", async (request, reply) => {
-    const token: string = request.params.t;
-    if (token === undefined) {
+    const oldToken: string = request.params.t;
+    if (oldToken === undefined) {
       reply.code(400);
       return { error: `Token parameter must be provided.` };
     }
-    if (token.length === 0) {
+    if (oldToken.length === 0) {
       reply.code(400);
       return { error: `Token parameter "t" must not be empty.` };
     }
-    if (!isValidToken(token)) {
+    if (!isValidToken(oldToken)) {
       reply.code(400);
-      return { error: `Token parameter is improperly formatted.`, token };
+      return { error: `Token parameter is improperly formatted.`, token: oldToken };
     }
 
     const secret: string = request.body?.secret;
@@ -102,12 +103,27 @@ export function buildServer() {
       return { error: `Secret length must be less than ${MAX_SECRET_LENGTH} .` };
     }
 
-    // [ ] discuss: Should be token be replaced on update?
-    // what happens if a secret is updated while reads are occuring?
-    // if a token is replaced then the old value should be given a time to live before it is deleted
-    await updateSecret(token, secret);
+    const newToken = generateToken();
 
-    return { token };
+    // [ ] discuss: The old token expires after 2 minutes and a new token is generated.
+    //     Once a token has been superseeded, it cannot be updated again.
+    //     This gives time for temporarily cached copies of tokens to be used
+    //     while preventing race conditions for a period of time
+    //
+    //     😱 What happens if the client API has an error and is unable to write the new updated token to storage?
+    //        That could result in the loss of the secret. Consider storing a map of oldToken -> newToken, which would
+    //        allow the client API to recover
+    try {
+      await updateSecret(oldToken, newToken, secret);
+    } catch (error) {
+      if (error instanceof ReplacedSecretError) {
+        reply.code(400);
+        return { error: `secret has already been replaced with another token.` };
+      }
+      throw error;
+    }
+
+    return { token: newToken };
   });
 
   server.delete("/tokens/:t", async (request, reply) => {

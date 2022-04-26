@@ -175,7 +175,7 @@ describe("/tokens", () => {
         payload: { secret: "New Secret" },
       });
       expect(res30.statusCode).toBe(200);
-      expect(JSON.parse(res30.payload)).toMatchObject({ token: t1 });
+      const t3 = JSON.parse(res30.payload).token;
 
       // update error - missing secret
       const res31 = await server.inject({
@@ -206,19 +206,33 @@ describe("/tokens", () => {
       expect(res33.statusCode).toBe(413);
       expect(res33.payload).toBe('{"error":"Secret length must be less than 500000 ."}');
 
-      // get
+      // update error - secret already replaced
+      const res34 = await server.inject({
+        headers,
+        method: "PUT",
+        url: `/tokens/${t1}`,
+        payload: { secret: "New Secret" },
+      });
+      expect(res34.statusCode).toBe(400);
+      expect(res34.payload).toBe(
+        '{"error":"secret has already been replaced with another token."}',
+      );
+
+      // get error
       const res40 = await server.inject({
         headers,
         method: "GET",
         url: "/tokens",
-        query: { t: t1 },
+        query: { t: t3 },
       });
       expect(res40.statusCode).toBe(200);
-      expect(JSON.parse(res40.payload)).toMatchObject({ [t1]: "New Secret" });
+      expect(JSON.parse(res40.payload)).toMatchObject({ [t3]: "New Secret" });
 
       // delete
       const res50 = await server.inject({ headers, method: "DELETE", url: `/tokens/${t1}` });
       expect(res50.statusCode).toBe(204);
       expect(res50.payload).toBe("null");
     }));
+
+  // [ ] TODO: write expiration test
 });
